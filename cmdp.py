@@ -27,7 +27,7 @@ class ContextualMDP(object):
 
 		# MDP parameters
 		self.Wp = {}
-		self.Wr = {}
+		self.wr = {}
 		for s in range(nState):
 			for a in range(nAction):
 				self.Wp[s,a] = np.zeros((nState, xDim))
@@ -64,7 +64,7 @@ class ContextualMDP(object):
 
 		return newState, reward, pContinue
 
-	def compute_Opt(self):
+	def compute_Opt(self, ctxt):
 		'''
 		Computes the Q-values for each state action pair for the current context and the optimal policy as well
 		'''
@@ -79,9 +79,28 @@ class ContextualMDP(object):
 			for s in range(self.nState):
 				qVal[s,j] = np.zeros(self.nAction)
 				for a in range(self.nAction):
-					qVal[s,j][a] = self.rFxn.mean(self.X, self.wr[s,a]) + np.dot(self.pFxn.prob(self.X, self.Wp[s,a]), qMax[j+1])
+					qVal[s,j][a] = self.rFxn.mean(ctxt, self.wr[s,a]) + np.dot(self.pFxn.prob(ctxt, self.Wp[s,a]), qMax[j+1])
 				qMax[j][s] = np.max(qVal[s,j])
 		return qVal, qMax
+
+	def eval_policy(self, ctxt, policy):
+		'''
+		Computes the Q-values for each state action pair for the current context with given policy
+		'''
+		qVal = {}
+		Vfx = {}
+
+		Vfx[self.horizon] = np.zeros(self.nState)
+
+		for i in range(self.horizon):
+			j = self.horizon - i - 1
+			Vfx[j] = np.zeros(self.nState)
+			for s in range(self.nState):
+				qVal[s,j] = np.zeros(self.nAction)
+				for a in range(self.nAction):
+					qVal[s,j][a] = self.rFxn.mean(ctxt, self.wr[s,a]) + np.dot(self.pFxn.prob(ctxt, self.Wp[s,a]), Vfx[j+1])
+				Vfx[j][s] = qVal[s,j][policy[s,j]]
+		return qVal, Vfx
 
 
 
