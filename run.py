@@ -14,6 +14,7 @@ ns = 10
 hz = 6
 env = envs.random_lincmdp(ns,ac,d,hz)
 
+
 def rand_policy(nState, horizon, nAction):
 	pol = {}
 	for h in range(horizon):
@@ -27,9 +28,11 @@ def rand_policy(nState, horizon, nAction):
 # _, _, pol2 = env.compute_Opt(x2)
 # x3 = np.random.dirichlet(0.35*np.ones(d))
 # _, _, pol3 = env.compute_Opt(x3)
+np.seed.reseed(12345)
+queue = []
 avg_regret = 0
 learner = gl_orl.GLORL(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
-learner = gl_rlsvi.GL_RLSVI(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
+# learner = gl_rlsvi.GL_RLSVI(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
 for i in range(5000000):
 	env.reset()
 	x = np.random.dirichlet(0.35*np.ones(d))
@@ -44,8 +47,14 @@ for i in range(5000000):
 		curr_a = learner.policy[curr_s,h]
 		next_s, r, _ = env.step(x, curr_a)
 		learner.update_obs(x, curr_s, curr_a, next_s, r)
-	avg_regret = (avg_regret*(i) + (qmax[0][0]-vfx[0][0]))/(i+1)
-	print("Round: ",i , " Opt_value: ", qmax[0][0], " Policy_values: ", vfx[0][0], " Avg. regret: ", avg_regret)
+	if len(queue) > 500:
+		queue.pop(0)
+		queue.append(qmax[0][0]-vfx[0][0])
+	else:
+		queue.append(qmax[0][0]-vfx[0][0])
+	avg_regret = np.average(queue)
+	if i%200 == 0:
+		print("Round: ",i , " Opt_value: ", qmax[0][0], " Policy_values: ", vfx[0][0], " Avg. regret: ", avg_regret)
 	# print("Opt_value: ", qmax[0][0], "\tPolicy_values: ", vfx1[0][0], '\t', vfx2[0][0], '\t', vfx3[0][0])
 
 

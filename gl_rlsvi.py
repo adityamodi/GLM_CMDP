@@ -1,7 +1,7 @@
 import numpy as np
 
 class GL_RLSVI(object):
-	def __init__(self, nState, nAction, horizon, xDim, pFxn, rFxn, plr=0.1, rlr=0.1, lbda=0.1, pScale=0.1):
+	def __init__(self, nState, nAction, horizon, xDim, pFxn, rFxn, plr=1, rlr=1, lbda=0.1, pScale=0.1):
 		self.nState = nState
 		self.nAction = nAction
 		self.horizon = horizon
@@ -49,14 +49,15 @@ class GL_RLSVI(object):
 		mult = self.plr * self.pFxn.alpha / 2.0
 		x = ctxt.reshape(self.xDim, 1)
 		self.Z[s,a] = self.Z[s,a] + mult * np.dot(x, x.T)
-		nZ_inv = self.Z_inv[s,a] - np.dot(np.dot(self.Z_inv[s,a], mult*x), np.dot(x.T, self.Z_inv[s,a]))/ (1+\
-			np.sqrt(np.dot(mult*x.T, np.dot(self.Z_inv[s,a], x))))
-		self.Z_inv[s,a] = nZ_inv
+		# nZ_inv = self.Z_inv[s,a] - np.dot(np.dot(self.Z_inv[s,a], mult*x), np.dot(x.T, self.Z_inv[s,a]))/ (1+\
+			# np.sqrt(np.dot(mult*x.T, np.dot(self.Z_inv[s,a], x))))
+		# self.Z_inv[s,a] = nZ_inv
+		self.Z_inv[s,a] = np.linalg.inv(self.Z[s,a])
 		# Update the parameter with ONS step
 		y = np.zeros(self.nState)
 		y[s_nxt] = 1
-		self.Wp[s,a] = self.pFxn.update(self.Wp[s,a], ctxt, y, nZ_inv, self.plr)
-		self.wr[s,a] = self.rFxn.update(self.wr[s,a], ctxt, r, nZ_inv, self.rlr)
+		self.Wp[s,a] = self.pFxn.update(self.Wp[s,a], ctxt, y, self.Z_inv[s,a], self.plr)
+		self.wr[s,a] = self.rFxn.update(self.wr[s,a], ctxt, r, self.Z_inv[s,a], self.rlr)
 		# Update tot_potential
 		self.tot_potential[s,a] = np.log(np.linalg.det(self.Z[s,a])) - self.xDim*np.log(self.lbda)
 
