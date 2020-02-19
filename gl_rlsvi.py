@@ -1,7 +1,7 @@
 import numpy as np
 
-class GLORL(object):
-	def __init__(self, nState, nAction, horizon, xDim, pFxn, rFxn, plr=0.01, rlr=0.01, lbda=0.1, pScale=0.1):
+class GL_RLSVI(object):
+	def __init__(self, nState, nAction, horizon, xDim, pFxn, rFxn, plr=0.1, rlr=0.1, lbda=0.1, pScale=0.1):
 		self.nState = nState
 		self.nAction = nAction
 		self.horizon = horizon
@@ -85,7 +85,9 @@ class GLORL(object):
 				# print(qVal[s,j])
 				for a in range(self.nAction):
 					est = self.rFxn.mean(ctxt, self.wr[s,a]) + np.dot(self.pFxn.prob(ctxt, self.Wp[s,a]), qMax[j+1])
-					opt_est = est+(pBonus[s,a]*np.max(qMax[j+1])+rBonus[s,a]) * self.pScale
+					sigma2 = self.nState* self.pScale*self.horizon*(pBonus[s,a]*np.max(qMax[j+1])+rBonus[s,a])
+					bonus = np.random.normal(0,np.sqrt(sigma2))
+					opt_est = est + bonus
 					qVal[s,j][a] = max(0, min(opt_est, self.horizon - j))
 				qMax[j][s] = np.max(qVal[s,j])
 				self.policy[s,j] = np.argmax(qVal[s,j])

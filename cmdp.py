@@ -45,13 +45,13 @@ class ContextualMDP(object):
 		self.t = 0
 		self.state = 0
 
-	def step(self, a):
+	def step(self, ctxt, a):
 		'''
 		Move the environment one step ahead using the given action
 		'''
 
-		reward = self.rFxn.sample_reward(self.X, self.wr[self.state, a])
-		newState = self.pFxn.sample_state(self.X, self.Wp[self.state, a])
+		reward = self.rFxn.sample_reward(ctxt, self.wr[self.state, a])
+		newState = self.pFxn.sample_state(ctxt, self.Wp[self.state, a])
 
 		self.state = newState
 		self.t += 1
@@ -70,6 +70,7 @@ class ContextualMDP(object):
 		'''
 		qVal = {}
 		qMax = {}
+		pol = {}
 
 		qMax[self.horizon] = np.zeros(self.nState)
 
@@ -81,7 +82,8 @@ class ContextualMDP(object):
 				for a in range(self.nAction):
 					qVal[s,j][a] = self.rFxn.mean(ctxt, self.wr[s,a]) + np.dot(self.pFxn.prob(ctxt, self.Wp[s,a]), qMax[j+1])
 				qMax[j][s] = np.max(qVal[s,j])
-		return qVal, qMax
+				pol[s,j] = np.argmax(qVal[s,j])
+		return qVal, qMax, pol
 
 	def eval_policy(self, ctxt, policy):
 		'''
