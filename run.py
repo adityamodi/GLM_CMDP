@@ -1,26 +1,35 @@
 import numpy as np
 import cvxpy as cp
+import os
 
 import envs
 import cmdp
 import gl_orl
 import gl_rlsvi
 import link_fxn as lf
+import random
+from tensorboardX import SummaryWriter
+
+logdir = os.getcwd() + '/glorl/'
+logdir = os.getcwd() + '/glrlsvi/'
+writer = SummaryWriter(logdir)
 
 
 d = 5
 ac = 5
 ns = 10
 hz = 6
+random.seed(12345)
+np.random.seed(12345)
 env = envs.random_lincmdp(ns,ac,d,hz)
 
 
-def rand_policy(nState, horizon, nAction):
-	pol = {}
-	for h in range(horizon):
-		for s in range(nState):
-			pol[s,h] = np.random.randint(nAction)
-	return pol
+# def rand_policy(nState, horizon, nAction):
+# 	pol = {}
+# 	for h in range(horizon):
+# 		for s in range(nState):
+# 			pol[s,h] = np.random.randint(nAction)
+# 	return pol
 
 # x1 = np.random.dirichlet(0.35*np.ones(d))
 # _, _, pol1 = env.compute_Opt(x1)
@@ -29,10 +38,12 @@ def rand_policy(nState, horizon, nAction):
 # x3 = np.random.dirichlet(0.35*np.ones(d))
 # _, _, pol3 = env.compute_Opt(x3)
 # np.random.seed.reseed(12345)
-queue = []
+regret_q = []
+optv_q = []
+vfx_q = []
 avg_regret = 0
-learner = gl_orl.GLORL(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
-# learner = gl_rlsvi.GL_RLSVI(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
+# learner = gl_orl.GLORL(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
+learner = gl_rlsvi.GL_RLSVI(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
 for i in range(5000000):
 	env.reset()
 	x = np.random.dirichlet(0.35*np.ones(d))
@@ -47,14 +58,25 @@ for i in range(5000000):
 		curr_a = learner.policy[curr_s,h]
 		next_s, r, _ = env.step(x, curr_a)
 		learner.update_obs(x, curr_s, curr_a, next_s, r)
-	if len(queue) > 500:
-		queue.pop(0)
-		queue.append(qmax[0][0]-vfx[0][0])
+	if len(queue) > 2000:
+		regret_q.pop(0)
+		optv_q.pop(0)
+		vfx_q.pop(0)
+		optv_q.append(qmax[0][0])
+		vfx_q.append(vfx[0][0])
+		regret_q.append(qmax[0][0]-vfx[0][0])
 	else:
-		queue.append(qmax[0][0]-vfx[0][0])
-	avg_regret = np.average(queue)
-	if i%200 == 0:
-		print("Round: ",i , " Opt_value: ", qmax[0][0], " Policy_values: ", vfx[0][0], " Avg. regret: ", avg_regret)
+		optv_q.append(qmax[0][0])
+		vfx_q.append(vfx[0][0])
+		regret_q.append(qmax[0][0]-vfx[0][0])
+	avg_regret = np.average(regret_q)
+	avg_opt = np.average(optv_q)
+	avg_vfx = np.average(vfx_q)
+	if i%100 == 0:
+		writer.add_scalar('Opt_value', np.average(optv_q), i//100)
+		writer.add_scalar('policy_val', np.average(vfx_q), i//100)
+		writer.add_scalar('Avg regret', np.average(regret_q), i//100)
+		# print("Round: ",i , " Opt_value: ", qmax[0][0], " Policy_values: ", vfx[0][0], " Avg. regret: ", avg_regret)
 	# print("Opt_value: ", qmax[0][0], "\tPolicy_values: ", vfx1[0][0], '\t', vfx2[0][0], '\t', vfx3[0][0])
 
 

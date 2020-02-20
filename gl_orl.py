@@ -49,10 +49,10 @@ class GLORL(object):
 		mult = self.plr * self.pFxn.alpha / 2.0
 		x = ctxt.reshape(self.xDim, 1)
 		self.Z[s,a] = self.Z[s,a] + mult * np.dot(x, x.T)
-		# nZ_inv = self.Z_inv[s,a] - np.dot(np.dot(self.Z_inv[s,a], mult*x), np.dot(x.T, self.Z_inv[s,a]))/ (1+\
-			# np.sqrt(np.dot(mult*x.T, np.dot(self.Z_inv[s,a], x))))
-		# self.Z_inv[s,a] = nZ_inv
-		self.Z_inv[s,a] = np.linalg.inv(self.Z[s,a])
+		nZ_inv = self.Z_inv[s,a] - np.dot(np.dot(self.Z_inv[s,a], mult*x), np.dot(x.T, self.Z_inv[s,a]))/ (1+\
+			np.sqrt(np.dot(mult*x.T, np.dot(self.Z_inv[s,a], x))))
+		self.Z_inv[s,a] = nZ_inv
+		# self.Z_inv[s,a] = np.linalg.inv(self.Z[s,a])
 		# Update the parameter with ONS step
 		y = np.zeros(self.nState)
 		y[s_nxt] = 1
@@ -70,7 +70,7 @@ class GLORL(object):
 				t = self.idx[s,a]
 				temp = np.log(t*t*np.log(self.nState*t)) + 4*self.tot_potential[s,a]
 				# temp = 4*self.tot_potential[s,a]
-				gamma = self.lbda*self.xDim + 8*self.plr + 2*self.plr*temp
+				# gamma = self.lbda*self.xDim + 8*self.plr + 2*self.plr*temp
 				gamma = 2*self.plr*temp
 				potential = np.sqrt(np.dot(ctxt, np.dot(self.Z_inv[s,a], ctxt)))
 				pBonus[s,a] = pFactor * np.sqrt(gamma) * potential

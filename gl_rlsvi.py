@@ -1,7 +1,7 @@
 import numpy as np
 
 class GL_RLSVI(object):
-	def __init__(self, nState, nAction, horizon, xDim, pFxn, rFxn, plr=1, rlr=1, lbda=0.1, pScale=0.1):
+	def __init__(self, nState, nAction, horizon, xDim, pFxn, rFxn, plr=1, rlr=1, lbda=0.1, pScale=0.05):
 		self.nState = nState
 		self.nAction = nAction
 		self.horizon = horizon
@@ -49,10 +49,10 @@ class GL_RLSVI(object):
 		mult = self.plr * self.pFxn.alpha / 2.0
 		x = ctxt.reshape(self.xDim, 1)
 		self.Z[s,a] = self.Z[s,a] + mult * np.dot(x, x.T)
-		# nZ_inv = self.Z_inv[s,a] - np.dot(np.dot(self.Z_inv[s,a], mult*x), np.dot(x.T, self.Z_inv[s,a]))/ (1+\
-			# np.sqrt(np.dot(mult*x.T, np.dot(self.Z_inv[s,a], x))))
-		# self.Z_inv[s,a] = nZ_inv
-		self.Z_inv[s,a] = np.linalg.inv(self.Z[s,a])
+		nZ_inv = self.Z_inv[s,a] - np.dot(np.dot(self.Z_inv[s,a], mult*x), np.dot(x.T, self.Z_inv[s,a]))/ (1+\
+			np.sqrt(np.dot(mult*x.T, np.dot(self.Z_inv[s,a], x))))
+		self.Z_inv[s,a] = nZ_inv
+		# self.Z_inv[s,a] = np.linalg.inv(self.Z[s,a])
 		# Update the parameter with ONS step
 		y = np.zeros(self.nState)
 		y[s_nxt] = 1
@@ -68,11 +68,12 @@ class GL_RLSVI(object):
 		for s in range(self.nState):
 			for a in range(self.nAction):
 				t = self.idx[s,a]
-				temp = 6.67*np.log(4*t*t*np.log(self.nState*t)/0.05) + 4*self.tot_potential[s,a]
-				gamma = self.lbda*self.xDim + 8*self.plr + 2*self.plr*temp
+				temp = np.log(t*t*np.log(self.nState*t)) + 4*self.tot_potential[s,a]
+				# gamma = self.lbda*self.xDim + 8*self.plr + 2*self.plr*temp
+				gamma = 2*self.plr*temp
 				potential = np.sqrt(np.dot(ctxt, np.dot(self.Z_inv[s,a], ctxt)))
 				pBonus[s,a] = pFactor * np.sqrt(gamma) * potential
-				rBonus[s,a] = (np.sqrt(self.lbda*self.xDim + 0.25*self.tot_potential[s,a] + 0.25*np.log(80)))*potential
+				rBonus[s,a] = np.sqrt(self.tot_potential[s,a])*potential
 		qVal = {}
 		qMax = {}
 
@@ -86,7 +87,7 @@ class GL_RLSVI(object):
 				# print(qVal[s,j])
 				for a in range(self.nAction):
 					est = self.rFxn.mean(ctxt, self.wr[s,a]) + np.dot(self.pFxn.prob(ctxt, self.Wp[s,a]), qMax[j+1])
-					sigma2 = self.nState* self.pScale*self.horizon*(pBonus[s,a]*np.max(qMax[j+1])+rBonus[s,a])
+					sigma2 = self.nState*self.pScale*self.horizon*(pBonus[s,a]*np.max(qMax[j+1])+rBonus[s,a])
 					bonus = np.random.normal(0,np.sqrt(sigma2))
 					opt_est = est + bonus
 					qVal[s,j][a] = max(0, min(opt_est, self.horizon - j))
