@@ -49,10 +49,10 @@ class GL_RLSVI(object):
 		mult = self.plr * self.pFxn.alpha / 2.0
 		x = ctxt.reshape(self.xDim, 1)
 		self.Z[s,a] = self.Z[s,a] + mult * np.dot(x, x.T)
-		nZ_inv = self.Z_inv[s,a] - np.dot(np.dot(self.Z_inv[s,a], mult*x), np.dot(x.T, self.Z_inv[s,a]))/ (1+\
-			np.sqrt(np.dot(mult*x.T, np.dot(self.Z_inv[s,a], x))))
-		self.Z_inv[s,a] = nZ_inv
-		# self.Z_inv[s,a] = np.linalg.inv(self.Z[s,a])
+		# nZ_inv = self.Z_inv[s,a] - np.dot(np.dot(self.Z_inv[s,a], mult*x), np.dot(x.T, self.Z_inv[s,a]))/ (1+\
+			# np.sqrt(np.dot(mult*x.T, np.dot(self.Z_inv[s,a], x))))
+		# self.Z_inv[s,a] = nZ_inv
+		self.Z_inv[s,a] = np.linalg.inv(self.Z[s,a])
 		# Update the parameter with ONS step
 		y = np.zeros(self.nState)
 		y[s_nxt] = 1
@@ -88,7 +88,7 @@ class GL_RLSVI(object):
 				for a in range(self.nAction):
 					est = self.rFxn.mean(ctxt, self.wr[s,a]) + np.dot(self.pFxn.prob(ctxt, self.Wp[s,a]), qMax[j+1])
 					sigma2 = self.nState*self.pScale*self.horizon*(pBonus[s,a]*np.max(qMax[j+1])+rBonus[s,a])
-					bonus = np.random.normal(0,np.sqrt(sigma2))
+					bonus = np.random.normal(0,np.abs(np.sqrt(sigma2)))
 					opt_est = est + bonus
 					qVal[s,j][a] = max(0, min(opt_est, self.horizon - j))
 				qMax[j][s] = np.max(qVal[s,j])

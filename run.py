@@ -11,7 +11,7 @@ import random
 from tensorboardX import SummaryWriter
 
 logdir = os.getcwd() + '/glorl/'
-logdir = os.getcwd() + '/glrlsvi/'
+# logdir = os.getcwd() + '/glrlsvi/'
 writer = SummaryWriter(logdir)
 
 
@@ -42,8 +42,8 @@ regret_q = []
 optv_q = []
 vfx_q = []
 avg_regret = 0
-# learner = gl_orl.GLORL(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
-learner = gl_rlsvi.GL_RLSVI(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
+learner = gl_orl.GLORL(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
+# learner = gl_rlsvi.GL_RLSVI(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
 for i in range(5000000):
 	env.reset()
 	x = np.random.dirichlet(0.35*np.ones(d))
@@ -58,7 +58,7 @@ for i in range(5000000):
 		curr_a = learner.policy[curr_s,h]
 		next_s, r, _ = env.step(x, curr_a)
 		learner.update_obs(x, curr_s, curr_a, next_s, r)
-	if len(queue) > 2000:
+	if len(regret_q) > 2000:
 		regret_q.pop(0)
 		optv_q.pop(0)
 		vfx_q.pop(0)
@@ -76,7 +76,7 @@ for i in range(5000000):
 		writer.add_scalar('Opt_value', np.average(optv_q), i//100)
 		writer.add_scalar('policy_val', np.average(vfx_q), i//100)
 		writer.add_scalar('Avg regret', np.average(regret_q), i//100)
-		# print("Round: ",i , " Opt_value: ", qmax[0][0], " Policy_values: ", vfx[0][0], " Avg. regret: ", avg_regret)
+	print("Round: ",i , " Opt_value: ", qmax[0][0], " Policy_values: ", vfx[0][0], " Avg. regret: ", avg_regret)
 	# print("Opt_value: ", qmax[0][0], "\tPolicy_values: ", vfx1[0][0], '\t', vfx2[0][0], '\t', vfx3[0][0])
 
 
