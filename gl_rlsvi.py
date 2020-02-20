@@ -56,8 +56,8 @@ class GL_RLSVI(object):
 		# Update the parameter with ONS step
 		y = np.zeros(self.nState)
 		y[s_nxt] = 1
-		self.Wp[s,a] = self.pFxn.update(self.Wp[s,a], ctxt, y, self.Z_inv[s,a], self.plr)
-		self.wr[s,a] = self.rFxn.update(self.wr[s,a], ctxt, r, self.Z_inv[s,a], self.rlr)
+		self.Wp[s,a] = self.pFxn.update(self.Wp[s,a], ctxt, y, self.Z[s,a], self.plr)
+		self.wr[s,a] = self.rFxn.update(self.wr[s,a], ctxt, r, self.Z[s,a], self.rlr)
 		# Update tot_potential
 		self.tot_potential[s,a] = np.log(np.linalg.det(self.Z[s,a])) - self.xDim*np.log(self.lbda)
 

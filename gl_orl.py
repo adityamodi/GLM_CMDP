@@ -56,8 +56,8 @@ class GLORL(object):
 		# Update the parameter with ONS step
 		y = np.zeros(self.nState)
 		y[s_nxt] = 1
-		self.Wp[s,a] = self.pFxn.update(self.Wp[s,a], ctxt, y, self.Z_inv[s,a], self.plr)
-		self.wr[s,a] = self.rFxn.update(self.wr[s,a], ctxt, r, self.Z_inv[s,a], self.rlr)
+		self.Wp[s,a] = self.pFxn.update(self.Wp[s,a], ctxt, y, self.Z[s,a], self.plr)
+		self.wr[s,a] = self.rFxn.update(self.wr[s,a], ctxt, r, self.Z[s,a], self.rlr)
 		# Update tot_potential
 		self.tot_potential[s,a] = np.log(np.linalg.det(self.Z[s,a])) - self.xDim*np.log(self.lbda)
 
@@ -68,11 +68,13 @@ class GLORL(object):
 		for s in range(self.nState):
 			for a in range(self.nAction):
 				t = self.idx[s,a]
-				temp = 6.67*np.log(4*t*t*np.log(self.nState*t)/0.05) + 4*self.tot_potential[s,a]
+				temp = np.log(t*t*np.log(self.nState*t)) + 4*self.tot_potential[s,a]
+				# temp = 4*self.tot_potential[s,a]
 				gamma = self.lbda*self.xDim + 8*self.plr + 2*self.plr*temp
+				gamma = 2*self.plr*temp
 				potential = np.sqrt(np.dot(ctxt, np.dot(self.Z_inv[s,a], ctxt)))
 				pBonus[s,a] = pFactor * np.sqrt(gamma) * potential
-				rBonus[s,a] = (np.sqrt(self.lbda*self.xDim + 0.25*self.tot_potential[s,a] + 0.25*np.log(80)))*potential
+				rBonus[s,a] = np.sqrt(self.tot_potential[s,a])*potential
 		qVal = {}
 		qMax = {}
 

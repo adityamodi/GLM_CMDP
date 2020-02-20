@@ -28,7 +28,7 @@ def rand_policy(nState, horizon, nAction):
 # _, _, pol2 = env.compute_Opt(x2)
 # x3 = np.random.dirichlet(0.35*np.ones(d))
 # _, _, pol3 = env.compute_Opt(x3)
-np.seed.reseed(12345)
+# np.random.seed.reseed(12345)
 queue = []
 avg_regret = 0
 learner = gl_orl.GLORL(ns, ac, hz, d, lf.linear_prob(ns,d), lf.rewardFxn(d))
